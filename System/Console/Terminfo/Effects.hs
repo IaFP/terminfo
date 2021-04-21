@@ -1,6 +1,9 @@
 {-# LANGUAGE CPP #-}
-#if __GLASGOW_HASKELL__ >= 703
+#if __GLASGOW_HASKELL__ >= 703 && __GLASGOW_HASKELL__ < 810
 {-# LANGUAGE Safe #-}
+#elif __GLASGOW_HASKELL__ >= 810
+{-# LANGUAGE PartialTypeConstructors #-}
+{-# LANGUAGE Trustworthy #-}
 #endif
 -- |
 -- Maintainer  : judah.jacobson@gmail.com
@@ -34,6 +37,9 @@ module System.Console.Terminfo.Effects(
 
 import System.Console.Terminfo.Base
 import Control.Monad
+#if MIN_VERSION_base(4,14,0)
+import GHC.Types (Total)
+#endif
 
 wrapWith :: TermStr s => Capability s -> Capability s -> Capability (s -> s)
 wrapWith start end = do

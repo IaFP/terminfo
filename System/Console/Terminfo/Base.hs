@@ -1,7 +1,11 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE Trustworthy #-}
+#if __GLASGOW_HASKELL__ >= 810
+{-# LANGUAGE PartialTypeConstructors #-}
+#endif
 -- |
 -- Maintainer  : judah.jacobson@gmail.com
 -- Stability   : experimental
@@ -56,6 +60,9 @@ import System.IO.Unsafe (unsafePerformIO)
 import System.IO
 import Control.Exception
 import Data.Typeable
+#if MIN_VERSION_base(4,14,0)
+import GHC.Types (Total)
+#endif
 
 
 data TERMINAL
@@ -181,6 +188,9 @@ infixl 2 <#>
 
 -- | A feature or operation which a 'Terminal' may define.
 newtype Capability a = Capability (Terminal -> IO (Maybe a))
+#if MIN_VERSION_base(4,14,0)
+instance Total Capability
+#endif
 
 getCapability :: Terminal -> Capability a -> Maybe a
 getCapability term (Capability f) = unsafePerformIO $ withCurTerm term (f term)
