@@ -1,9 +1,4 @@
-{-# LANGUAGE CPP #-}
-#if __GLASGOW_HASKELL__ >= 703 && __GLASGOW_HASKELL__ < 810
 {-# LANGUAGE Safe #-}
-#elif __GLASGOW_HASKELL__ >= 810
-{-# LANGUAGE Trustworthy #-}
-#endif
 {- |
 Maintainer  : judah.jacobson@gmail.com
 Stability   : experimental
