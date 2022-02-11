@@ -1,6 +1,9 @@
 {-# LANGUAGE CPP #-}
-#if __GLASGOW_HASKELL__ >= 703
+#if __GLASGOW_HASKELL__ > 703 &&  __GLASGOW_HASKELL__ < 902
 {-# LANGUAGE Safe #-}
+#else
+{-# LANGUAGE Trustworthy #-}
+{-# LANGUAGE QuantifiedConstraints, FlexibleContexts #-}
 #endif
 -- |
 -- Maintainer  : judah.jacobson@gmail.com
@@ -53,6 +56,9 @@ module System.Console.Terminfo.Cursor(
 
 import System.Console.Terminfo.Base
 import Control.Monad
+#if MIN_VERSION_base(4,16,0)
+import GHC.Types (Total)
+#endif
 
 termLines :: Capability Int
 termColumns :: Capability Int
@@ -95,47 +101,95 @@ Since there's no easy way to check for ONLCR at this point, I've just made
 moveDown only use cud1 if it's not '\n'.
 Suggestions are welcome.
 --}
-cursorDown1Fixed :: TermStr s => Capability s
+cursorDown1Fixed ::  (
+#if MIN_VERSION_base(4,16,0)
+  Total Capability, 
+#endif
+  TermStr s) => Capability s
 cursorDown1Fixed = do
     str <- tiGetOutput1 "cud1"
     guard (str /= "\n")
     tiGetOutput1 "cud1"
 
-cursorDown1 :: TermStr s => Capability s
+cursorDown1 :: (
+#if MIN_VERSION_base(4,16,0)
+  Total Capability, 
+#endif
+  TermStr s)=> Capability s
 cursorDown1 = tiGetOutput1 "cud1"
 
-cursorLeft1 :: TermStr s => Capability s
+cursorLeft1 :: (
+#if MIN_VERSION_base(4,16,0)
+  Total Capability, 
+#endif
+  TermStr s)=> Capability s
 cursorLeft1 = tiGetOutput1 "cub1"
 
-cursorRight1 :: TermStr s => Capability s
+cursorRight1 :: (
+#if MIN_VERSION_base(4,16,0)
+  Total Capability, 
+#endif
+  TermStr s)=> Capability s
 cursorRight1 = tiGetOutput1 "cuf1"
 
-cursorUp1 :: TermStr s => Capability s
+cursorUp1 :: (
+#if MIN_VERSION_base(4,16,0)
+  Total Capability, 
+#endif
+  TermStr s)=> Capability s
 cursorUp1 = tiGetOutput1 "cuu1"
 
-cursorDown :: TermStr s => Capability (Int -> s)
+cursorDown :: (
+#if MIN_VERSION_base(4,16,0)
+  Total Capability, 
+#endif
+  TermStr s)=> Capability (Int -> s)
 cursorDown = tiGetOutput1 "cud"
 
-cursorLeft :: TermStr s => Capability (Int -> s)
+cursorLeft :: (
+#if MIN_VERSION_base(4,16,0)
+  Total Capability, 
+#endif
+  TermStr s)=> Capability (Int -> s)
 cursorLeft = tiGetOutput1 "cub"
 
-cursorRight :: TermStr s => Capability (Int -> s)
+cursorRight :: (
+#if MIN_VERSION_base(4,16,0)
+  Total Capability, 
+#endif
+  TermStr s)=> Capability (Int -> s)
 cursorRight = tiGetOutput1 "cuf"
 
-cursorUp :: TermStr s => Capability (Int -> s)
+cursorUp :: (
+#if MIN_VERSION_base(4,16,0)
+  Total Capability, 
+#endif
+  TermStr s)=> Capability (Int -> s)
 cursorUp = tiGetOutput1 "cuu"
 
-cursorHome :: TermStr s => Capability s
+cursorHome :: (
+#if MIN_VERSION_base(4,16,0)
+  Total Capability, 
+#endif
+  TermStr s)=> Capability s
 cursorHome = tiGetOutput1 "home"
 
-cursorToLL :: TermStr s => Capability s
+cursorToLL :: (
+#if MIN_VERSION_base(4,16,0)
+  Total Capability, 
+#endif
+  TermStr s)=> Capability s
 cursorToLL = tiGetOutput1 "ll"
 
 
 -- Movements are built out of parametrized and unparam'd movement
 -- capabilities.
 -- todo: more complicated logic like ncurses does.
-move :: TermStr s => Capability s -> Capability (Int -> s)
+move :: (
+#if MIN_VERSION_base(4,16,0)
+  Total Capability, 
+#endif
+  TermStr s)=> Capability s -> Capability (Int -> s)
                               -> Capability (Int -> s)
 move single param = let
         tryBoth = do
@@ -150,50 +204,94 @@ move single param = let
                         return $ \n -> mconcat $ replicate n s
         in tryBoth `mplus` param `mplus` manySingle
 
-moveLeft :: TermStr s => Capability (Int -> s)
+moveLeft :: (
+#if MIN_VERSION_base(4,16,0)
+  Total Capability, 
+#endif
+  TermStr s)=> Capability (Int -> s)
 moveLeft = move cursorLeft1 cursorLeft
 
-moveRight :: TermStr s => Capability (Int -> s)
+moveRight :: (
+#if MIN_VERSION_base(4,16,0)
+  Total Capability, 
+#endif
+  TermStr s)=> Capability (Int -> s)
 moveRight = move cursorRight1 cursorRight
 
-moveUp :: TermStr s => Capability (Int -> s)
+moveUp :: (
+#if MIN_VERSION_base(4,16,0)
+  Total Capability, 
+#endif
+  TermStr s)=> Capability (Int -> s)
 moveUp = move cursorUp1 cursorUp
 
-moveDown :: TermStr s => Capability (Int -> s)
+moveDown :: (
+#if MIN_VERSION_base(4,16,0)
+  Total Capability, 
+#endif
+  TermStr s)=> Capability (Int -> s)
 moveDown = move cursorDown1Fixed cursorDown
 
 -- | The @cr@ capability, which moves the cursor to the first column of the
 -- current line.
-carriageReturn :: TermStr s => Capability s
+carriageReturn :: (
+#if MIN_VERSION_base(4,16,0)
+  Total Capability, 
+#endif
+  TermStr s)=> Capability s
 carriageReturn = tiGetOutput1 "cr"
 
 -- | The @nel@ capability, which moves the cursor to the first column of
 -- the next line.  It behaves like a carriage return followed by a line feed.
 --
 -- If @nel@ is not defined, this may be built out of other capabilities.
-newline :: TermStr s => Capability s
+newline :: (
+#if MIN_VERSION_base(4,16,0)
+  Total Capability, 
+#endif
+  TermStr s)=> Capability s
 newline = tiGetOutput1 "nel" 
     `mplus` (liftM2 mappend carriageReturn 
                             (scrollForward `mplus` tiGetOutput1 "cud1"))
         -- Note it's OK to use cud1 here, despite the stty problem referenced 
         -- above, because carriageReturn already puts us on the first column.
 
-scrollForward :: TermStr s => Capability s
+scrollForward :: (
+#if MIN_VERSION_base(4,16,0)
+  Total Capability, 
+#endif
+  TermStr s)=> Capability s
 scrollForward = tiGetOutput1 "ind"
 
-scrollReverse :: TermStr s => Capability s
+scrollReverse :: (
+#if MIN_VERSION_base(4,16,0)
+  Total Capability, 
+#endif
+  TermStr s)=> Capability s
 scrollReverse = tiGetOutput1 "ri"
 
 
 data Point = Point {row, col :: Int}
 
-cursorAddress :: TermStr s => Capability (Point -> s)
+cursorAddress :: (
+#if MIN_VERSION_base(4,16,0)
+  Total Capability, 
+#endif
+  TermStr s)=> Capability (Point -> s)
 cursorAddress = fmap (\g p -> g (row p) (col p)) $ tiGetOutput1 "cup"
 
-columnAddress :: TermStr s => Capability (Int -> s)
+columnAddress :: (
+#if MIN_VERSION_base(4,16,0)
+  Total Capability, 
+#endif
+  TermStr s)=> Capability (Int -> s)
 columnAddress = tiGetOutput1 "hpa"
 
-rowAddress :: TermStr s => Capability (Int -> s)
+rowAddress :: (
+#if MIN_VERSION_base(4,16,0)
+  Total Capability, 
+#endif
+  TermStr s)=> Capability (Int -> s)
 rowAddress = tiGetOutput1 "vpa"
 
 

@@ -1,8 +1,13 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE CApiFFI #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE Trustworthy #-}
+#if __GLASGOW_HASKELL__ >= 903
+{-# LANGUAGE QuantifiedConstraints, ExplicitNamespaces, TypeOperators,
+             FlexibleContexts, UndecidableInstances, MultiParamTypeClasses, TypeFamilies #-}
+#endif 
 -- |
 -- Maintainer  : judah.jacobson@gmail.com
 -- Stability   : experimental
@@ -58,6 +63,9 @@ import System.IO
 import Control.Exception
 import Data.Typeable
 
+#if MIN_VERSION_base(4,16,0)
+import GHC.Types (Total, type(@))
+#endif
 
 data TERMINAL
 newtype Terminal = Terminal (ForeignPtr TERMINAL)
@@ -186,6 +194,9 @@ infixl 2 <#>
 
 -- | A feature or operation which a 'Terminal' may define.
 newtype Capability a = Capability (Terminal -> IO (Maybe a))
+#if MIN_VERSION_base(4,16,0)
+type instance Capability @ a = ()
+#endif
 
 getCapability :: Terminal -> Capability a -> Maybe a
 getCapability term (Capability f) = unsafePerformIO $ withCurTerm term (f term)
@@ -195,11 +206,19 @@ getCapability term (Capability f) = unsafePerformIO $ withCurTerm term (f term)
 instance Functor Capability where
     fmap f (Capability g) = Capability $ \t -> fmap (fmap f) (g t)
 
-instance Applicative Capability where
+instance
+-- #if MIN_VERSION_base(4,16,0)
+--   Total Capability =>
+-- #endif
+  Applicative Capability where
     pure = Capability . const . pure . Just
     (<*>) = ap
 
-instance Monad Capability where
+instance
+-- #if MIN_VERSION_base(4,16,0)
+--   Total Capability =>
+-- #endif
+  Monad Capability where
     return = pure
     Capability f >>= g = Capability $ \t -> do
         mx <- f t
@@ -207,11 +226,19 @@ instance Monad Capability where
             Nothing -> return Nothing
             Just x -> let Capability g' = g x in g' t
 
-instance Alternative Capability where
+instance
+-- #if MIN_VERSION_base(4,16,0)
+--   Total Capability =>
+-- #endif
+  Alternative Capability where
     (<|>) = mplus
     empty = mzero
 
-instance MonadPlus Capability where
+instance
+-- #if MIN_VERSION_base(4,16,0)
+--   Total Capability =>
+-- #endif
+  MonadPlus Capability where
     mzero = Capability (const $ return Nothing)
     Capability f `mplus` Capability g = Capability $ \t -> do
         mx <- f t
@@ -241,7 +268,11 @@ tiGetFlag cap = Capability $ const $ fmap (Just . (>0)) $
                 
 -- | Look up a boolean capability in the terminfo database, and fail if
 -- it\'s not defined.
-tiGuardFlag :: String -> Capability ()
+tiGuardFlag ::
+#if MIN_VERSION_base(4,16,0)
+  Total Capability =>
+#endif
+  String -> Capability ()
 tiGuardFlag cap = tiGetFlag cap >>= guard
                 
 foreign import ccall tigetstr :: CString -> IO CString
@@ -286,7 +317,11 @@ tParm cap = Capability $ \t -> return $ Just
           tparm' _ = fail "tParm: List too short"
 
 -- | Look up an output capability in the terminfo database.  
-tiGetOutput :: String -> Capability ([Int] -> LinesAffected -> TermOutput)
+tiGetOutput ::
+#if MIN_VERSION_base(4,16,0)
+  Total Capability =>
+#endif
+  String -> Capability ([Int] -> LinesAffected -> TermOutput)
 tiGetOutput cap = do
     str <- tiGetStr cap
     f <- tParm str
@@ -317,7 +352,11 @@ tPuts s n putc = withCString s $ \c_str -> tputs c_str (toEnum n) putc
 -- 
 -- For capabilities which may contain variable-length
 -- padding, use 'tiGetOutput' instead.
-tiGetOutput1 :: forall f . OutputCap f => String -> Capability f
+tiGetOutput1 :: forall f . (
+#if MIN_VERSION_base(4,16,0)
+  Total Capability,
+#endif
+  OutputCap f) => String -> Capability f
 tiGetOutput1 str = do
     cap <- tiGetStr str
     guard (hasOkPadding (undefined :: f) cap)

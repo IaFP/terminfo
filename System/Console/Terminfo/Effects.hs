@@ -1,7 +1,11 @@
 {-# LANGUAGE CPP #-}
-#if __GLASGOW_HASKELL__ >= 703
+#if __GLASGOW_HASKELL__ > 703 &&  __GLASGOW_HASKELL__ < 902
 {-# LANGUAGE Safe #-}
+#else
+{-# LANGUAGE Trustworthy #-}
+{-# LANGUAGE QuantifiedConstraints, FlexibleContexts #-}
 #endif
+
 -- |
 -- Maintainer  : judah.jacobson@gmail.com
 -- Stability   : experimental
@@ -34,8 +38,15 @@ module System.Console.Terminfo.Effects(
 
 import System.Console.Terminfo.Base
 import Control.Monad
+#if MIN_VERSION_base(4,16,0)
+import GHC.Types (Total)
+#endif
 
-wrapWith :: TermStr s => Capability s -> Capability s -> Capability (s -> s)
+wrapWith :: (
+#if __GLASGOW_HASKELL__ >= 903
+  Total Capability, 
+#endif
+  TermStr s) => Capability s -> Capability s -> Capability (s -> s)
 wrapWith start end = do
     s <- start
     e <- end
@@ -43,52 +54,108 @@ wrapWith start end = do
 
 -- | Turns on standout mode before outputting the given
 -- text, and then turns it off.
-withStandout :: TermStr s => Capability (s -> s)
+withStandout ::  (
+#if __GLASGOW_HASKELL__ >= 903
+  Total Capability, 
+#endif
+  TermStr s) => Capability (s -> s)
 withStandout = wrapWith enterStandoutMode exitStandoutMode
 
 -- | Turns on underline mode before outputting the given
 -- text, and then turns it off.
-withUnderline :: TermStr s => Capability (s -> s)
+withUnderline ::  (
+#if __GLASGOW_HASKELL__ >= 903
+  Total Capability, 
+#endif
+  TermStr s) => Capability (s -> s)
 withUnderline = wrapWith enterUnderlineMode exitUnderlineMode
 
 -- | Turns on bold mode before outputting the given text, and then turns
 -- all attributes off.
-withBold :: TermStr s => Capability (s -> s)
+withBold ::  (
+#if __GLASGOW_HASKELL__ >= 903
+  Total Capability, 
+#endif
+  TermStr s) => Capability (s -> s)
 withBold = wrapWith boldOn allAttributesOff
 
-enterStandoutMode :: TermStr s => Capability s
+enterStandoutMode :: (
+#if __GLASGOW_HASKELL__ >= 903
+  Total Capability, 
+#endif
+  TermStr s) => Capability s
 enterStandoutMode = tiGetOutput1 "smso"
 
-exitStandoutMode :: TermStr s => Capability s
+exitStandoutMode :: (
+#if __GLASGOW_HASKELL__ >= 903
+  Total Capability, 
+#endif
+  TermStr s) => Capability s
 exitStandoutMode = tiGetOutput1 "rmso"
 
-enterUnderlineMode :: TermStr s => Capability s
+enterUnderlineMode :: (
+#if __GLASGOW_HASKELL__ >= 903
+  Total Capability, 
+#endif
+  TermStr s) => Capability s
 enterUnderlineMode = tiGetOutput1 "smul"
 
-exitUnderlineMode :: TermStr s => Capability s
+exitUnderlineMode :: (
+#if __GLASGOW_HASKELL__ >= 903
+  Total Capability, 
+#endif
+  TermStr s) => Capability s
 exitUnderlineMode = tiGetOutput1 "rmul"
 
-reverseOn :: TermStr s => Capability s
+reverseOn ::  (
+#if __GLASGOW_HASKELL__ >= 903
+  Total Capability, 
+#endif
+  TermStr s) => Capability s
 reverseOn = tiGetOutput1 "rev"
 
-blinkOn:: TermStr s => Capability s
+blinkOn ::  (
+#if __GLASGOW_HASKELL__ >= 903
+  Total Capability, 
+#endif
+  TermStr s) => Capability s
 blinkOn = tiGetOutput1 "blink"
 
-boldOn :: TermStr s => Capability s
+boldOn ::  (
+#if __GLASGOW_HASKELL__ >= 903
+  Total Capability, 
+#endif
+  TermStr s) => Capability s
 boldOn = tiGetOutput1 "bold"
 
-dimOn :: TermStr s => Capability s
+dimOn ::  (
+#if __GLASGOW_HASKELL__ >= 903
+  Total Capability, 
+#endif
+  TermStr s) => Capability s
 dimOn = tiGetOutput1 "dim"
 
-invisibleOn :: TermStr s => Capability s
+invisibleOn ::  (
+#if __GLASGOW_HASKELL__ >= 903
+  Total Capability, 
+#endif
+  TermStr s) => Capability s
 invisibleOn = tiGetOutput1 "invis"
 
-protectedOn :: TermStr s => Capability s
+protectedOn ::  (
+#if __GLASGOW_HASKELL__ >= 903
+  Total Capability, 
+#endif
+  TermStr s) => Capability s
 protectedOn = tiGetOutput1 "prot"
 
 -- | Turns off all text attributes.  This capability will always succeed, but it has
 -- no effect in terminals which do not support text attributes.
-allAttributesOff :: TermStr s => Capability s
+allAttributesOff :: (
+#if __GLASGOW_HASKELL__ >= 903
+  Total Capability, 
+#endif
+  TermStr s) => Capability s
 allAttributesOff = tiGetOutput1 "sgr0" `mplus` return mempty
 
 data Attributes = Attributes {
@@ -106,7 +173,11 @@ data Attributes = Attributes {
 -- | Sets the attributes on or off before outputting the given text,
 -- and then turns them all off.  This capability will always succeed; properties
 -- which cannot be set in the current terminal will be ignored.
-withAttributes :: TermStr s => Capability (Attributes -> s -> s)
+withAttributes :: (
+#if __GLASGOW_HASKELL__ >= 903
+  Total Capability, 
+#endif
+  TermStr s) => Capability (Attributes -> s -> s)
 withAttributes = do
     set <- setAttributes
     off <- allAttributesOff
@@ -114,7 +185,11 @@ withAttributes = do
 
 -- | Sets the attributes on or off.  This capability will always succeed;
 -- properties which cannot be set in the current terminal will be ignored.
-setAttributes :: TermStr s => Capability (Attributes -> s)
+setAttributes ::  (
+#if __GLASGOW_HASKELL__ >= 903
+  Total Capability, 
+#endif
+  TermStr s) => Capability (Attributes -> s)
 setAttributes = usingSGR0 `mplus` manualSets
     where
         usingSGR0 = do
@@ -129,8 +204,12 @@ setAttributes = usingSGR0 `mplus` manualSets
                                   (mkAttr invisibleAttr)
                                   (mkAttr protectedAttr)
                                   (0::Int) -- for alt. character sets
-        attrCap :: TermStr s => (Attributes -> Bool) -> Capability s 
-                    -> Capability (Attributes -> s)
+        attrCap ::  (
+#if __GLASGOW_HASKELL__ >= 903
+                     Total Capability, 
+#endif
+                     TermStr s) => (Attributes -> Bool) -> Capability s 
+                                -> Capability (Attributes -> s)
         attrCap f cap = do {to <- cap; return $ \a -> if f a then to else mempty}
                         `mplus` return (const mempty)
         manualSets = do
@@ -152,9 +231,17 @@ defaultAttributes :: Attributes
 defaultAttributes = Attributes False False False False False False False False
 
 -- | Sound the audible bell.
-bell :: TermStr s => Capability s
+bell ::  (
+#if __GLASGOW_HASKELL__ >= 903
+  Total Capability, 
+#endif
+  TermStr s) => Capability s
 bell = tiGetOutput1 "bel"
 
 -- | Present a visual alert using the @flash@ capability.
-visualBell :: Capability TermOutput
+visualBell :: 
+#if __GLASGOW_HASKELL__ >= 903
+  Total Capability =>
+#endif
+  Capability TermOutput
 visualBell = tiGetOutput1 "flash"

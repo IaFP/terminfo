@@ -1,7 +1,11 @@
 {-# LANGUAGE CPP #-}
-#if __GLASGOW_HASKELL__ >= 703
+#if __GLASGOW_HASKELL__ > 703 &&  __GLASGOW_HASKELL__ < 902
 {-# LANGUAGE Safe #-}
+#else
+{-# LANGUAGE Trustworthy #-}
+{-# LANGUAGE QuantifiedConstraints, FlexibleContexts #-}
 #endif
+
 -- |
 -- Maintainer  : judah.jacobson@gmail.com
 -- Stability   : experimental
@@ -22,6 +26,9 @@ module System.Console.Terminfo.Color(
 import System.Console.Terminfo.Base
 import Control.Monad (mplus)
 
+#if MIN_VERSION_base(4,16,0)
+import GHC.Types (Total)
+#endif
 -- TODOs:
 -- examples
 -- try with xterm-256-colors (?)
@@ -71,17 +78,29 @@ colorInt c = case c of
 -- terminal's foreground color while outputting the given text, and
 -- then restores the terminal to its default foreground and background
 -- colors.
-withForegroundColor :: TermStr s => Capability (Color -> s -> s)
+withForegroundColor ::  (
+#if __GLASGOW_HASKELL__ >= 903
+  Total Capability, 
+#endif
+  TermStr s) => Capability (Color -> s -> s)
 withForegroundColor = withColorCmd setForegroundColor
 
 -- | This capability temporarily sets the
 -- terminal's background color while outputting the given text, and
 -- then restores the terminal to its default foreground and background
 -- colors.
-withBackgroundColor :: TermStr s => Capability (Color -> s -> s)
+withBackgroundColor ::  (
+#if __GLASGOW_HASKELL__ >= 903
+  Total Capability, 
+#endif
+  TermStr s) => Capability (Color -> s -> s)
 withBackgroundColor = withColorCmd setBackgroundColor
 
-withColorCmd :: TermStr s => Capability (a -> s)
+withColorCmd :: (
+#if __GLASGOW_HASKELL__ >= 903
+  Total Capability, 
+#endif
+  TermStr s) => Capability (a -> s)
             -> Capability (a -> s -> s)
 withColorCmd getSet = do
     set <- getSet
@@ -90,7 +109,11 @@ withColorCmd getSet = do
 
 -- | Sets the foreground color of all further text output, using
 -- either the @setaf@ or @setf@ capability.
-setForegroundColor :: TermStr s => Capability (Color -> s)
+setForegroundColor :: (
+#if __GLASGOW_HASKELL__ >= 903
+  Total Capability, 
+#endif
+  TermStr s) => Capability (Color -> s)
 setForegroundColor = setaf `mplus` setf
     where
         setaf = fmap (. colorIntA) $ tiGetOutput1 "setaf"
@@ -98,7 +121,11 @@ setForegroundColor = setaf `mplus` setf
 
 -- | Sets the background color of all further text output, using
 -- either the @setab@ or @setb@ capability.
-setBackgroundColor :: TermStr s => Capability (Color -> s)
+setBackgroundColor :: (
+#if __GLASGOW_HASKELL__ >= 903
+  Total Capability, 
+#endif
+  TermStr s) => Capability (Color -> s)
 setBackgroundColor = setab `mplus` setb
     where
         setab = fmap (. colorIntA) $ tiGetOutput1 "setab"
@@ -120,5 +147,9 @@ type ColorPair = (Color,Color)
 
 -- | Restores foreground/background colors to their original
 -- settings.
-restoreDefaultColors :: TermStr s => Capability s 
+restoreDefaultColors :: (
+#if __GLASGOW_HASKELL__ >= 903
+  Total Capability, 
+#endif
+  TermStr s) => Capability s 
 restoreDefaultColors = tiGetOutput1 "op"
