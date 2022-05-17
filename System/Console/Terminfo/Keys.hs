@@ -1,9 +1,9 @@
 {-# LANGUAGE CPP #-}
-#if __GLASGOW_HASKELL__ > 703 &&  __GLASGOW_HASKELL__ < 902
+#if __GLASGOW_HASKELL__ > 703
 {-# LANGUAGE Safe #-}
-#else
-{-# LANGUAGE Trustworthy #-}
-{-# LANGUAGE QuantifiedConstraints, FlexibleContexts #-}
+#endif
+#if __GLASGOW_HASKELL__ >= 903
+{-# LANGUAGE QuantifiedConstraints #-}
 #endif
 -- |
 -- Maintainer  : judah.jacobson@gmail.com
@@ -38,106 +38,47 @@ module System.Console.Terminfo.Keys(
                     ) where
 
 import System.Console.Terminfo.Base
-#if MIN_VERSION_base(4,16,0)
-import GHC.Types (Total)
-#endif
 
-keypadOn :: (
-#if MIN_VERSION_base(4,16,0)
-  Total Capability,
-#endif
-  TermStr s) => Capability s
+keypadOn :: TermStr s => Capability s
 keypadOn = tiGetOutput1 "smkx"
 
-keypadOff :: (
-#if MIN_VERSION_base(4,16,0)
-  Total Capability,
-#endif
-  TermStr s) => Capability s
+keypadOff :: TermStr s => Capability s
 keypadOff = tiGetOutput1 "rmkx"
 
-keyUp ::
-#if MIN_VERSION_base(4,16,0)
-  Total Capability =>
-#endif  
-  Capability String
+keyUp :: Capability String
 keyUp = tiGetOutput1 "kcuu1"
 
-keyDown ::
-#if MIN_VERSION_base(4,16,0)
-  Total Capability =>
-#endif
-  Capability String
+keyDown :: Capability String
 keyDown = tiGetOutput1 "kcud1"
 
-keyLeft ::
-#if MIN_VERSION_base(4,16,0)
-  Total Capability =>
-#endif
-  Capability String
+keyLeft :: Capability String
 keyLeft = tiGetOutput1 "kcub1"
 
-keyRight ::
-#if MIN_VERSION_base(4,16,0)
-  Total Capability =>
-#endif
-  Capability String
+keyRight :: Capability String
 keyRight = tiGetOutput1 "kcuf1"
 
 -- | Look up the control sequence for a given function sequence.  For example, 
 -- @functionKey 12@ retrieves the @kf12@ capability.
-functionKey ::
-#if MIN_VERSION_base(4,16,0)
-  Total Capability =>
-#endif
-  Int -> Capability String
+functionKey :: Int -> Capability String
 functionKey n = tiGetOutput1 ("kf" ++ show n)
 
-keyBackspace ::
-#if MIN_VERSION_base(4,16,0)
-  Total Capability =>
-#endif
-  Capability String
+keyBackspace :: Capability String
 keyBackspace = tiGetOutput1 "kbs"
 
-keyDeleteChar ::
-#if MIN_VERSION_base(4,16,0)
-  Total Capability =>
-#endif
-  Capability String
+keyDeleteChar :: Capability String
 keyDeleteChar = tiGetOutput1 "kdch1"
 
-keyHome ::
-#if MIN_VERSION_base(4,16,0)
-  Total Capability =>
-#endif
-  Capability String
+keyHome :: Capability String
 keyHome = tiGetOutput1 "khome"
 
-keyEnd ::
-#if MIN_VERSION_base(4,16,0)
-  Total Capability =>
-#endif
-  Capability String
+keyEnd :: Capability String
 keyEnd = tiGetOutput1 "kend"
 
-keyPageUp ::
-#if MIN_VERSION_base(4,16,0)
-  Total Capability =>
-#endif
-  Capability String
+keyPageUp :: Capability String
 keyPageUp = tiGetOutput1 "kpp"
 
-keyPageDown ::
-#if MIN_VERSION_base(4,16,0)
-  Total Capability =>
-#endif
-  Capability String
+keyPageDown :: Capability String
 keyPageDown = tiGetOutput1 "knp"
 
-keyEnter ::
-#if MIN_VERSION_base(4,16,0)
-  Total Capability =>
-#endif
-  Capability String
+keyEnter :: Capability String
 keyEnter = tiGetOutput1 "kent"
